@@ -1,9 +1,25 @@
+# 森空岛自动签到（明日方舟 + 终末地）
+# 基于 AEtherside/skland-daily-attendance
+#
+# 使用前提：本工作流必须放在「已经包含项目源码」的仓库里
+# （即 fork 自 AEtherside/skland-daily-attendance，仓库根目录有 package.json / pnpm-lock.yaml）。
+# 只把本文件拷到一个空仓库是无法运行的，因为 pnpm install / pnpm action 依赖项目源码。
+
 name: attendance
 
 on:
   schedule:
-    - cron: '0 16 * * *'
+    # 注意：GitHub Actions 的 cron 使用 UTC 时间！
+    # 30 0 * * *
+    #   = 00:30 UTC = 北京时间 08:30（每天）
+    # 想换时间就改这一行，对照表见 README：
+    #   北京时间 08:00 -> '0 0 * * *'
+    #   北京时间 08:30 -> '30 0 * * *'
+    #   北京时间 00:00 -> '0 16 * * *'（上游默认，卡零点，不推荐）
+    - cron: '30 0 * * *'
+  # 允许在 Actions 页面手动点击运行，方便第一次测试
   workflow_dispatch:
+  # 允许被其它工作流调用（保持与上游一致，可留可删）
   workflow_call:
     secrets:
       SKLAND_TOKENS:
@@ -17,7 +33,7 @@ on:
     inputs:
       repository:
         description: The repository to run the workflow on
-        default: enpitsuLin/skland-daily-attendance
+        default: AEtherside/skland-daily-attendance
         required: false
         type: string
 
@@ -53,6 +69,7 @@ jobs:
           SKLAND_MAX_RETRIES: ${{ secrets.SKLAND_MAX_RETRIES }}
           SKLAND_ANONYMOUS: ${{ secrets.SKLAND_ANONYMOUS }}
 
+  # 防止仓库长期无活动导致 GitHub 自动停用 Actions（无需额外提交）
   workflow-keepalive:
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
